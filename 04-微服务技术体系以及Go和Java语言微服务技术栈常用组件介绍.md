@@ -85,7 +85,7 @@ Spring 是一个全家桶，Spring Cloud 也是一个全家桶，它由很多技
   
 - **负载均衡**：Ribbon
 
-- **REST客户端**：Feign
+- **REST客户端**：Feign、openfeign
   
 - **网关**：
   API 网关：Zuul
