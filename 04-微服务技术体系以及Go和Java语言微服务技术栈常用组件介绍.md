@@ -76,36 +76,39 @@ zipkin，pinpoint，skywalking，jaeger
 
 
 
-Spring 是一个全家桶，Spring Cloud也是一个全家桶，它由很多技术框架组合而成：
-- 服务治理
-  - 服务注册和发现：Netflix Eureka
+Spring 是一个全家桶，Spring Cloud 也是一个全家桶，它由很多技术组件组合而成：
+
+- **断路器**：Hystrix
+
+- **服务注册和发现**：Netflix Eureka
   当然我们也有其他的选择，比如consul，etcd，zookeeper等
-  - 断路器：Hystrix
-  - 调用端负载均衡：Ribbon
-  - REST客户端：Feign
   
-- 网关
+- **负载均衡**：Ribbon
+
+- **REST客户端**：Feign
+  
+- **网关**：
   API 网关：Zuul
   
   当然我们也可以选择其他的，比如Spring Cloud Gateway，kong，nginx+lua，apisix等
   
-- 分布式链路监控
+- **分布式链路监控**：
   - Spring Cloud Sleuth：埋点和发送数据
     
-  当然还有其他的比如zipkin，pinpoint，skywalking，jaeger等
+  当然还有其他的比如 zipkin，pinpoint，skywalking，jaeger等
   
-- 消息组件
+- **消息组件**：
   - Spring Cloud Stream
   - Spirng Cloud Bus
     
   消息中间件的其他软件：RocketMQ，Kafka，RabbitMQ
   
-- 配置中心
+- **配置中心**：
   - Spring Cloud Config
     
    配置中心可以有其他的替代，比如Apollo，Nacos等
   
-- 安全控制
+- **安全控制**：
   - Spring Cloud Security
   
   
