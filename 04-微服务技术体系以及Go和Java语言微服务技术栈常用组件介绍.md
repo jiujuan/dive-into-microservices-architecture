@@ -78,7 +78,8 @@ zipkin，pinpoint，skywalking，jaeger
 
 Spring 是一个全家桶，Spring Cloud 也是一个全家桶，它由很多技术组件组合而成：
 
-- **断路器**：Hystrix
+- **断路器**：Hystrix、circuitbreaker
+
 
 - **服务注册和发现**：Netflix Eureka
   当然我们也有其他的选择，比如consul，etcd，zookeeper等
