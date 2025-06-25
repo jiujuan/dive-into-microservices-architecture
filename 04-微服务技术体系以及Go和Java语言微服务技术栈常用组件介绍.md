@@ -12,51 +12,65 @@
 
 
 ### 微服务框架
+
 - [go-micro](https://github.com/micro/go-micro)
 - [go-kit](https://github.com/go-kit/kit)
 
-国内的bilibili、好未来和斗鱼也出了一个微服务框架：
+国内的bilibili、好未来和斗鱼也开源了 Golang 微服务框架：
+
 - [kratos](https://github.com/go-kratos/kratos) bilibili B站出品
 - [jupiter](https://github.com/douyu/jupiter) 斗鱼出品
 - [go-zero](https://github.com/zeromicro/go-zero) 好未来出品
 
 ### 网关
+
 - [kong](https://github.com/Kong/kong)
 - [nginx](https://github.com/nginx/nginx)+lua
 - [traefik](https://docs.traefik.io)
 - [apisix](https://github.com/apache/incubator-apisix)
 
 ### 服务注册和发现
+
 - [consul](https://github.com/hashicorp/consul)
 - [etcd](https://github.com/etcd-io/etcd)
 - [zookeeper](https://zookeeper.apache.org)
 
 ### 配置中心
+
 - [Apollo](https://github.com/ctripcorp/apollo)，
 - [Nacos](https://github.com/alibaba/Nacos)
 
-... ...
 
 ### 服务治理
+
 断路器：
 - [hystrix-go](https://github.com/afex/hystrix-go)
 
 流量控制：
-- [sentinel-golang](https://github.com/alibaba/sentinel-golang) 
+- [sentinel-golang](https://github.com/alibaba/sentinel-golang)
+  
 从限流、流量整形、熔断降级、系统负载保护等多个维度来帮助您保障微服务的稳定性。
 
 ### 链路监控
-zipkin，pinpoint，skywalking，jaeger
+
+- [zipkin](https://zipkin.io/)
+- [pinpoint](https://github.com/pinpoint-apm/pinpoint)
+- [skywalking](https://skywalking.apache.org/)
+- [jaeger](https://www.jaegertracing.io/)
 
 ### 日志、业务、系统监控
-[prometheus](https://prometheus.io/)
-[ELK](https://www.elastic.co/)
+
+- [prometheus](https://prometheus.io/)
+
+- [ELK](https://www.elastic.co/)
 
 ### CI/CD
+
 - [jenkins](https://www.jenkins.io)
 - [drone](https://drone.io/)
+- [gitlab CI/CD](https://about.gitlab.com/solutions/continuous-integration/)
+- [github](https://github.com/)
 
-......
 
 > golang技术学习和微服务学习，[这里有个学习路线图](https://github.com/jiujuan/go-collection)，可以去学习
 
