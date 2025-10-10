@@ -1,0 +1,288 @@
+## 一、什么是熔断器
+
+要理解熔断器，可以先看看电路中使用的保险丝。
+
+保险丝（fuse）也被称为电流保险丝，IEC127 标准将它定义为“熔断体（fuse-link）”。保险丝是一种保证电路安全运行的电子元器件，作用就是在电流异常升高到一定的高度和热度的时候，自身熔断切断电流，这样可以保护电路安全运行。
+
+保险丝是一种自我保护装置，保护整个电路线路安全。保护整个电路线路安全是说一户家庭用户用电太高或异常保险丝烧断，只影响这家用户用电情况，不会影响线路上的其它家庭用电情况。
+
+![image-20230415234256720](https://img2023.cnblogs.com/blog/650581/202304/650581-20230417202601275-1953419294.png)
+
+- 那微服务治理中的熔断器呢？
+
+它也是一种保护装置，用来保护服务，在流量过高时，保护其它服务能安全运行。
+
+在微服务架构中，系统是由很多服务组成的，一个服务功能可能依赖多个服务，如下简图，服务 C 依赖服务 E 和 服务 F，服务 B 也依赖服务 E。这还是一个小例子图。看看 Uber 的微服务依赖全图，依赖关系更加复杂，相互依赖关系密密麻麻。
+
+![image-20230416005724668](https://img2023.cnblogs.com/blog/650581/202304/650581-20230417202601211-5864830.png)
+
+当一个服务遇到访问异常流量时，影响的不仅是自身服务，还会影响到与之依赖的服务，依赖的服务又影响它依赖的服务，子子孙孙无穷匮，这样有可能引起系统崩溃，这就是**雪崩效应**。
+
+要怎么办？
+
+可以使用熔断器为微服务调用提供保护机制。熔断器像“保险丝”一样，它作为一个开关，遇到异常流量，可以打开熔断器断开服务；服务恢复后，又可以关闭熔断器，重新调用服务。
+
+
+
+- 服务治理中熔断器：
+
+> 服务熔断是指调用方访问服务时，通过熔断器做代理来进行访问，熔断器会持续观察服务返回的成功、失败的状态，当失败次数超过设置的阙值时，熔断器断开，请求就不能访问到下游服务了。
+
+![image-20230416022203606](https://img2023.cnblogs.com/blog/650581/202304/650581-20230417202601181-454959869.png)
+
+它的作用：1. 当所依赖的服务不稳定时，能够起到快速失败的目的
+
+​        2. 快速失败后，能够用一定的算法动态探测所依赖对象是否恢复
+
+## 二、熔断器的3种状态
+
+熔断器实现主要是设置一个阙值，这个阙值可以是最大并发数，请求错误率百分比等，超过这个阙值就进行熔断。还会设置一个尝试恢复时间。
+
+熔断器有3种状态：
+
+- CLOSED：默认状态。熔断器计算数（最大请求数、请求错误百分比等）没有达到设置的阙值，熔断器就认为被代理服务状态良好。
+- OPEN：熔断器计算数计算数（最大请求数、请求错误百分比等）已经达到阙值，熔断器就认为被代理的服务已经故障了，打开熔断器开关，请求不再代理服务，而是快速失败。
+- HALF OPEN：熔断器打开后，为了能自动恢复被代理服务的访问，会切换到半开放状态，去尝试请求被代理服务以查看服务故障是否已经恢复了。如果恢复了，会转为 CLOSED 状态；否则转到 OPEN 状态。
+
+![image-20230416035122513](https://img2023.cnblogs.com/blog/650581/202304/650581-20230417202601243-1755903579.png)
+
+熔断器需要考虑的一些问题：
+
+- 熔断时长的设置，超过这个时长后切换到 HALF OPEN 进行重试。
+- 重试时，要注意业务是否允许这样做。
+- 不同的异常，需要定义熔断后不同处理逻辑。
+- 记录请求失败日志，供以后人工处理使用。
+
+## 三、熔断框架 hystrix-go
+
+### hystrix-go 介绍
+
+hystrix-go 是一个用 Go 语言开发的熔断框架。
+
+> https://github.com/afex/hystrix-go
+
+hystrix-go 是一个延迟和容错的库，作用是隔离系统调用、服务和第三方调用等，阻止级联故障，并在故障不可避免的复杂分布式系统中能够实现恢复的能力。它是基于 Netflix 的同名项目：https://github.com/Netflix/Hystrix 。
+
+
+
+可以看看 Netflix 的 Hystrix 是如何工作，对了解 hystrix-go 有很大帮助，https://github.com/Netflix/Hystrix/wiki/How-it-Works ：
+
+> 1. [Construct a `HystrixCommand` or `HystrixObservableCommand` Object](https://github.com/Netflix/Hystrix/wiki/How-it-Works#flow1)
+> 2. [Execute the Command](https://github.com/Netflix/Hystrix/wiki/How-it-Works#flow2)
+> 3. [Is the Response Cached?](https://github.com/Netflix/Hystrix/wiki/How-it-Works#flow3)
+> 4. [Is the Circuit Open?](https://github.com/Netflix/Hystrix/wiki/How-it-Works#flow4)
+> 5. [Is the Thread Pool/Queue/Semaphore Full?](https://github.com/Netflix/Hystrix/wiki/How-it-Works#flow5)
+> 6. [`HystrixObservableCommand.construct()` or `HystrixCommand.run()`](https://github.com/Netflix/Hystrix/wiki/How-it-Works#flow6)
+> 7. [Calculate Circuit Health](https://github.com/Netflix/Hystrix/wiki/How-it-Works#flow7)
+> 8. [Get the Fallback](https://github.com/Netflix/Hystrix/wiki/How-it-Works#flow8)
+> 9. [Return the Successful Response](https://github.com/Netflix/Hystrix/wiki/How-it-Works#flow9)
+
+### 使用方法介绍
+
+hystrix-go 的调用方法有 2 个：
+
+- Do：同步调用
+
+```go
+func Do(name string, run runFunc, fallback fallbackFunc)
+```
+
+
+
+- Go：异步调用
+
+```go
+func Go(name string, run runFunc, fallback fallbackFunc)
+```
+
+
+
+- 将代码作为 hystrix-go 的命令执行
+
+```go
+hystrix.Go("my_command", func() error {
+	// talk to other services
+	return nil
+}, nil)
+```
+
+定义一个依赖外部系统的应用程序逻辑，然后将这个函数传递给 Go。当系统没有问题时，将会执行这个程序逻辑。
+
+
+
+- 定义失败后执行的业务逻辑
+
+```go
+hystrix.Go("my_command", func() error {
+	// talk to other services
+	return nil
+}, func(err error) error {
+	// do this when services are down，调用服务失败后，可以在这里执行一些逻辑
+	return nil
+})
+```
+
+如果想在服务中断期间执行一些业务逻辑，可以传入第三个参数，这个参数也是一个匿名函数。这第三个参数作用就是在第二个参数（匿名函数）的代码调用服务返回错误时，执行的一些业务逻辑。
+
+```go
+hystrix.Go(
+    "my_command", 
+    func() error {
+	  // talk to other services
+      _, err := http.Get("https://google.com")
+      if err != nil {
+          fmt.Println("Get baidu err: %v", err)
+          return err
+      }
+	  return nil
+    }, 
+    func(err error) error {
+	  // do this when services are down
+      fmt.Println("上面匿名函数中代码调用服务错误时，运行这里的代码")
+	  return nil
+    },
+)
+```
+
+
+
+- 等待输出
+
+可以选择监控的输出，如下：
+
+```go
+output := make(chan bool, 1)
+errors := hystrix.Go("my_command", func() error {
+	// talk to other services
+	output <- true
+	return nil
+}, nil)
+
+select {
+case out := <-output:
+	// success
+case err := <-errors:
+	// failure
+}
+```
+
+
+
+- 配置设置
+
+```go
+func Configure(cmds map[string]CommandConfig) 
+func ConfigureCommand(name string, config CommandConfig)
+```
+
+`Configure` 方法内部也是调用的 `ConfigureCommand` 方法。
+
+hystrix-go 有一个默认配置。
+
+也可以设置配置，如下：
+
+```go
+hystrix.ConfigureCommand(
+    "my_command",  // 熔断器的名字，一个名字对应一个熔断器
+    
+    hystrix.CommandConfig{
+	Timeout:               1000,  //超时时间，单位毫秒 ms。默认 1000ms
+	MaxConcurrentRequests: 100,   // 最大并发数，超过这个设置就返回错误。默认 10
+	ErrorPercentThreshold: 25,     // 设置错误数量统计百分比阙值，超过这个阙值，就开启熔断。默认 50
+    RequestVolumeThreshold: 4,     // 一个窗口10秒内请求的数量阙值，达到这个阙值就开启熔断
+    SleepWindow:            1000,  // 熔断器被激活后，多久重试服务是否可用，单位毫秒。默认 5000ms
+})
+```
+
+> - RequestVolumeThreshold：一个窗口10秒内请求的数量阙值，判断熔断开关的条件之一。请求数量大于等于这个设置的数量阙值后，且错误百分比也达到设置的阙值，就开启熔断
+> - ErrorPercentThreshold：错误数量统计百分比阙值，判断熔断开关的条件之一。请求数量大于等于 RequestVolumeThreshold 并且错误百分比达到这个百分比后就会开启熔断
+
+- 在dashboard中显示hystrix上报信息
+
+main.go 程序中，在 http 的一个端口上注册一个事件流并且在 goroutine 中启动它，就可以在这个http端口上查看这个上报流。如果你在  [Hystrix Dashboard](https://github.com/Netflix/Hystrix/tree/master/hystrix-dashboard) 配置了这个事件流，那么事件信息就可以自动显示在 dashboard 上。
+
+```go
+hystrixStreamHandler := hystrix.NewStreamHandler()
+hystrixStreamHandler.Start()
+go http.ListenAndServe(net.JoinHostPort("", "81"), hystrixStreamHandler)
+```
+
+上面的代码开启了 dashboard，在 http 端口 81 上可以查看 hystrix 上报的信息，http://localhost:81。
+
+- 可以向 Statsd 发送 circuit metric
+
+```go
+c, err := plugins.InitializeStatsdCollector(&plugins.StatsdCollectorConfig{
+	StatsdAddr: "localhost:8125",
+	Prefix:     "myapp.hystrix",
+})
+if err != nil {
+	log.Fatalf("could not initialize statsd client: %v", err)
+}
+
+metricCollector.Registry.Register(c.NewStatsdCollector)
+```
+
+### 代码示例
+
+一个简单使用 hystrix-go 示例代码：
+
+```go
+package main
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/afex/hystrix-go/hystrix"
+)
+
+func main() {
+	hystrix.ConfigureCommand("my_command_name", hystrix.CommandConfig{
+		Timeout:                1000, // 超时时间1000ms
+		MaxConcurrentRequests:  40,   // 最大并发数40
+		RequestVolumeThreshold: 20,   // 请求数量阙值20，达到这个阙值才可能触发熔断
+		ErrorPercentThreshold:  20,   // 错误百分比例阙值 20%
+	})
+
+	client := http.Client{}
+
+	doRequest := func() error {
+		req, err := http.NewRequest("GET", "https://www.bin.com", nil)
+		if err != nil {
+			return err
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+
+		defer resp.Body.Close()
+
+		fmt.Println("doRequest: ", resp.Status)
+
+		return nil
+	}
+
+	err := hystrix.Do("my_command_name", func() error {
+		return doRequest()
+	}, nil)
+
+	if err != nil {
+		fmt.Println("end: ", err)
+	}
+}
+```
+
+创建一个 http 客户端，封装一个 doRequest 请求函数。
+
+然后调用 hystrix.Do 函数，把封装好的 doRequest 函数放在 Do 函数的第二个参数中执行，Do 函数会监视请求的执行情况，会根据超时时间、并发数、错误百分比阙值等来判断是否允许请求执行，当达到某个阙值时，将会触发熔断器，并执行熔断器的错误执行逻辑，也就是 Do 函数第三个参数，在这段代码中直接设置为 nil ，没有编写错误逻辑代码，也就不执行。
+
+---
+也可以到我的公众号 [九卷技术录：(微服务)服务治理：熔断器介绍以及hystrix-go的使用](https://mp.weixin.qq.com/s/Xk1lSDzYaqB9VNMrAUPNiQ) 继续讨论
+
+## 四、参考
+
+- https://github.com/Netflix/Hystrix/wiki/How-it-Works
+- https://github.com/afex/hystrix-go
